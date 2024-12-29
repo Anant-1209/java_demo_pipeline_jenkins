@@ -2,7 +2,6 @@ pipeline {
     agent any
 
     environment {
-        PYTHON_PATH = 'C:\\Users\\My PC\\AppData\\Local\\Programs\\Python\\Python313;C:\\Users\\My PC\\AppData\\Local\\Programs\\Python\\Python313\\Scripts'
         SONAR_SCANNER_PATH = 'C:\\Program Files\\sonar-scanner-6.2.1.4610-windows-x64\\bin'
     }
 
@@ -13,25 +12,34 @@ pipeline {
             }
         }
 
-        stage('Install Dependencies') {
+        stage('Build and Test') {
             steps {
-                bat '"C:\\Users\\My PC\\AppData\\Local\\Programs\\Python\\Python313\\python.exe" -m pip install -r requirements.txt'
+                script {
+                    def mvnHome = tool 'Maven3' // Use the Maven tool configured in Jenkins
+                    withEnv(["PATH+MAVEN=${mvnHome}/bin"]) {
+                        bat 'mvn clean verify'
+                    }
+                }
             }
         }
 
-        stage('SonarAnalysis') {
+        stage('Sonar Analysis') {
             environment {
-                SONAR_TOKEN = credentials('guessing_project_pipeline') // Ensure the correct credentials ID
+                SONAR_TOKEN = credentials('maven_sonar_project_token') // Ensure the correct credential ID
             }
             steps {
-                bat """
-                set PATH=%PYTHON_PATH%;%SONAR_SCANNER_PATH%;%PATH%
-                sonar-scanner.bat ^
-                -Dsonar.projectKey=guessing_game_jenkin_pipeline ^
-                -Dsonar.sources=. ^
-                -Dsonar.host.url=http://localhost:9000 ^
-                -Dsonar.login=%SONAR_TOKEN%
-                """
+                script {
+                    def mvnHome = tool 'Maven3' // Use the Maven tool configured in Jenkins
+                    withEnv(["PATH+MAVEN=${mvnHome}/bin"]) {
+                        bat """
+                        mvn sonar:sonar ^
+                        -Dsonar.projectKey=tictacto_java_project_pipeline ^
+                        -Dsonar.projectName='tictacto_java_project_pipeline' ^
+                        -Dsonar.host.url=http://localhost:9000 ^
+                        -Dsonar.login=%SONAR_TOKEN%
+                        """
+                    }
+                }
             }
         }
     }
