@@ -25,7 +25,7 @@ pipeline {
 
         stage('Sonar Analysis') {
             environment {
-                SONAR_TOKEN = credentials('guessing_project_pipeline') // Ensure the correct credential ID
+                SONAR_TOKEN = credentials('maven_sonar_project_token') // Ensure the correct credential ID
             }
             steps {
                 script {
